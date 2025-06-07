@@ -34,7 +34,7 @@ cd parserwiki
 cp .env.example .env
 ```
 Задайте ваш AI API ключ в переменной AI_API_KEY (получить можно на [OpenRouter.ai](https://openrouter.ai))
-3. 🐳 Запуск с Docker Compose
+### 3. 🐳 Запуск с Docker Compose
 ```bash
 docker-compose up --build
 ```
