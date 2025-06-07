@@ -1,0 +1,23 @@
+__pycache__/
+*.py[cod]
+*$py.class
+
+.venv/
+env/
+
+.idea/
+
+alembic/versions/
+
+# Env
+.env
+
+# Docker
+*.pid
+*.db
+*.sock
+*.bak
+docker-compose.override.yml
+
+# Others
+.DS_Store
