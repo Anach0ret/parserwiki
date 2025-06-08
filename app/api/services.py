@@ -35,7 +35,10 @@ async def fetch_ai_summary(content: str):
                 print(f"OpenAi API error: {response.status} - {text}")
 
             data = await response.json()
-            return data["choices"][0]["message"]["content"]
+            try:
+                return data["choices"][0]["message"]["content"]
+            except (KeyError, IndexError) as e:
+                raise ValueError(f"Unexpected AI response: {data}") from e
 
 
 async def fetch(url: str):
@@ -104,31 +107,32 @@ class ArticleParserService:
 
         parent_article = await parser(html_page, self.url, parent=True)
         db_article = await self.db.create_get_article(data=parent_article)
+        await self.db.flush_session()
         self.tasks.append(self.generate_summary(db_article))
-        self.tasks.extend([self._parse_create_child(link, db_article) for link in parent_article["links"]])
+        self.tasks.extend([self._parse_child(link, db_article) for link in parent_article["links"]])
 
-        result = await self._execute_tasks()
+        children = await self._execute_tasks()
+        await self._create_child(children, db_article)
 
-        return {
-            "message": f"Parsed article from {self.url}",
-            "parent_article": parent_article,
-            "result_tasks": result
-        }
+        return True
 
 
     async def _execute_tasks(self):
         return await asyncio.gather(*self.tasks, return_exceptions=False)
 
-    async def _parse_create_child(self, link: str, parent: Article):
-        print(f'child parse {link}')
+    async def _parse_child(self, link: str, parent: Article):
         html = await fetch(link)
         if not html:
             return None
-        data = await parser(html, link, parent=False)
-        return await self.db.create_get_article(data=data, parent=parent)
+        return await parser(html, link, parent=False)
+
+    async def _create_child(self, children_data: list[dict], parent: Article):
+        for child_data in children_data:
+            if child_data is None:
+                continue
+            await self.db.create_get_article(data=child_data, parent=parent)
 
     async def generate_summary(self, article: Article):
-        print('generate summary')
         summary = await fetch_ai_summary(article.content)
         await self.db.create_summary(summary, article.id)
 

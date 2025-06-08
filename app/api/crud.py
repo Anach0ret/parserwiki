@@ -33,3 +33,7 @@ class DB:
     async def create_summary(self, content: str, article_id: int=None):
         summary = Summary(content=content, article_id=article_id)
         self.session.add(summary)
+
+
+    async def flush_session(self):
+        await self.session.flush()
