@@ -27,6 +27,7 @@ class Article(Base):
         secondary=article_links,
         primaryjoin=id == article_links.c.child_id,
         secondaryjoin=id == article_links.c.parent_id,
+        lazy="selectin",
         back_populates="children"
     )
 
@@ -35,6 +36,7 @@ class Article(Base):
         secondary=article_links,
         primaryjoin=id == article_links.c.parent_id,
         secondaryjoin=id == article_links.c.child_id,
+        lazy="selectin",
         back_populates="parents"
     )
 

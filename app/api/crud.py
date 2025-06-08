@@ -13,7 +13,10 @@ class DB:
         result = await self.session.execute(
             select(Article)
             .where(Article.url == url)
-            .options(selectinload(Article.summary))
+            .options(
+                selectinload(Article.summary),
+                selectinload(Article.parents)
+            )
         )
         return result.scalars().first()
 
@@ -25,6 +28,7 @@ class DB:
                 title=data["title"],
                 content=data["content"],
             )
+        print(f"fdsfdsdsfdfsdfsdsfdsewwed{article}")
         if parent:
             article.parents.append(parent)
         self.session.add(article)
