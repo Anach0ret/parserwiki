@@ -1,3 +1,11 @@
+"""
+Слой доступа к базе данных для моделей Article и Summary.
+
+- `DB`: предоставляет асинхронные методы для получения, создания статей и сохранения summary.
+- Гарантирует уникальность статей по URL.
+"""
+
+
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 

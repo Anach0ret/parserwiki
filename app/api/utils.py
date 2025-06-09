@@ -1,3 +1,12 @@
+"""
+Утилита для HTML-парсинга на основе BeautifulSoup.
+
+- `Parser`: извлекает заголовок, контент и внутренние ссылки из статьи Wikipedia-подобного формата.
+- Удаляет теги сноски `<sup>`.
+- Для родительской статьи собирает ссылки на дочерние.
+"""
+
+
 from dataclasses import dataclass, field
 
 from bs4 import BeautifulSoup

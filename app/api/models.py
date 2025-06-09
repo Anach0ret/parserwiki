@@ -1,3 +1,13 @@
+"""
+Модели базы данных: статьи и их краткие содержания.
+
+- `Article`: статья с URL, заголовком, контентом и связями с родительскими и дочерними статьями.
+- `Summary`: краткое содержание, связанное с конкретной статьёй.
+- `article_links`: вспомогательная таблица для связи m2m между статьями (родитель-дочерняя).
+"""
+
+
+
 from sqlalchemy import Column, Integer, String, Text, ForeignKey, Table
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 

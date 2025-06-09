@@ -13,14 +13,3 @@ class UrlSchema(BaseModel):
         if not re.match(r"^https?://en\.wikipedia\.org/wiki/", str(url)):
             raise ValueError("URL must be from English Wikipedia (e.g., https://en.wikipedia.org/wiki/...)")
         return url
-
-
-
-
-class ArticleSchema(BaseModel):
-    id: int = None
-    url: str = None
-    title: str = None
-    content: str = None
-
-    links: None | list = None

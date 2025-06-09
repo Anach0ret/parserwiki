@@ -1,3 +1,12 @@
+"""
+Сервис для парсинга и генерации краткого содержания статьи.
+
+- `ArticleParserService`: парсит родительскую статью, асинхронно обрабатывает дочерние ссылки.
+- Использует `Parser` для извлечения данных и `DB` для работы с БД.
+- Генерирует summary через внешнюю AI-модель (OpenRouter).
+"""
+
+
 import aiohttp
 import asyncio
 from dotenv import load_dotenv

@@ -1,3 +1,11 @@
+"""
+FastAPI-роуты для парсинга и получения summary статьи.
+
+- `POST /parse`: запускает парсинг статьи и генерацию summary, если статья ещё не сохранена.
+- `POST /summary`: возвращает сохранённое summary по URL статьи, если оно существует.
+"""
+
+
 from fastapi import APIRouter, status
 from fastapi.responses import JSONResponse
 
