@@ -15,8 +15,8 @@ async def parse_article(url_schema: UrlSchema, session: SessionDep):
     db = DB(session)
     existing_article = await db.get_by_url(str(url_schema.url))
     if not existing_article:
-        parse_service = ArticleParserService(url_schema, db)
-        await parse_service.parse()
+        parse_service = ArticleParserService(db)
+        await parse_service.parse(url_schema)
         await session.commit()
         return JSONResponse(
             status_code=status.HTTP_201_CREATED,
@@ -33,7 +33,13 @@ async def get_summary(url_schema: UrlSchema, session: SessionDep):
     db = DB(session)
     existing_article = await db.get_by_url(str(url_schema.url))
     if existing_article:
-        return {"summary": existing_article.summary.content}
+        if existing_article.summary:
+            return {"summary": existing_article.summary.content}
+        else:
+            return JSONResponse(
+                status_code=status.HTTP_404_NOT_FOUND,
+                content={'error': 'Summary not found for this article'}
+            )
     return JSONResponse(
         status_code=status.HTTP_404_NOT_FOUND,
         content={'error': 'Article with this URL not found'}

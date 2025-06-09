@@ -1,14 +1,12 @@
-from bs4 import BeautifulSoup
 import aiohttp
 import asyncio
-import re
-from urllib.parse import urljoin
 from dotenv import load_dotenv
 import os
 
 from app.api.schemas import UrlSchema
 from app.api.crud import DB
 from app.api.models import Article
+from app.api.utils import Parser
 
 load_dotenv()
 AI_API_KEY = os.getenv("AI_API_KEY")
@@ -50,66 +48,27 @@ async def fetch(url: str):
                 return False
 
 
-async def parser(html: str, url: str, parent: bool) -> dict:
-    data = {
-        'url': url,
-        'title': None,
-        'content': None,
-        'links': [],
-    }
-    base_url = "https://en.wikipedia.org"
-    wiki_article_pattern = re.compile(r'^/wiki/[^:#]+$')
-    soup = BeautifulSoup(html, 'lxml')
-
-    title = soup.find('header', class_= 'mw-body-header').find('h1', class_= 'firstHeading')
-    if title:
-        data['title'] = title.get_text()
-    else:
-        data['title'] = "Title"
-
-    content_body = soup.find('div', class_='mw-body-content')
-
-    content_parts = []
-    for content_part in content_body.find_all(name=['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6']):
-        if content_part.get_text() == 'See also':
-            break
-        for sup_tag in content_part.find_all('sup'):
-            sup_tag.decompose()
-
-        if len(data['links']) < 5 and parent:
-            for link in content_part.find_all('a', limit=5-len(data['links'])):
-                href = link.get('href')
-                if href and wiki_article_pattern.match(href):
-                    full_url = urljoin(base_url, href)
-                    data['links'].append(full_url)
-
-        content_parts.append(content_part.get_text())
-    data['content'] = "\n".join(content_parts).replace("\n",'')
-
-    return data
-
-
-
 
 class ArticleParserService:
-    def __init__(self, url_schema: UrlSchema, db: DB):
-        self.url = str(url_schema.url)
+    def __init__(self,db: DB):
         self.db = db
 
         self.tasks = []
 
 
-    async def parse(self):
-        html_page = await fetch(self.url)
+    async def parse(self, url: UrlSchema):
+        url = str(url.url)
+        html_page = await fetch(url)
 
         if not html_page:
             return {"error": "Failed to fetch parent article"}
 
-        parent_article = await parser(html_page, self.url, parent=True)
-        db_article = await self.db.create_get_article(data=parent_article)
+        parser = Parser(parent=True, url=url, html=html_page)
+        parser.parse()
+        db_article = await self.db.create_get_article(data=parser.generate_data_dict())
         await self.db.flush_session()
         self.tasks.append(self.generate_summary(db_article))
-        self.tasks.extend([self._parse_child(link, db_article) for link in parent_article["links"]])
+        self.tasks.extend([self._parse_child(url) for url in parser.urls])
 
         children = await self._execute_tasks()
         await self._create_child(children, db_article)
@@ -120,11 +79,13 @@ class ArticleParserService:
     async def _execute_tasks(self):
         return await asyncio.gather(*self.tasks, return_exceptions=False)
 
-    async def _parse_child(self, link: str, parent: Article):
-        html = await fetch(link)
-        if not html:
+    async def _parse_child(self, url: str):
+        html_page = await fetch(url)
+        if not html_page:
             return None
-        return await parser(html, link, parent=False)
+        parser = Parser(parent=False, url=url, html=html_page)
+        parser.parse()
+        return parser.generate_data_dict()
 
     async def _create_child(self, children_data: list[dict], parent: Article):
         for child_data in children_data:

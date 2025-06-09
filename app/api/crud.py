@@ -21,6 +21,7 @@ class DB:
         return result.scalars().first()
 
     async def create_get_article(self, data: dict, parent: Article=None) -> Article:
+        # Лучше добавить логику проверки наличия еще ДО парсинга
         article = await self.get_by_url(data["url"])
         if not article:
             article = Article(
@@ -28,7 +29,6 @@ class DB:
                 title=data["title"],
                 content=data["content"],
             )
-        print(f"fdsfdsdsfdfsdfsdsfdsewwed{article}")
         if parent:
             article.parents.append(parent)
         self.session.add(article)
